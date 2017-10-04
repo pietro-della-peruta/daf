@@ -17,10 +17,16 @@ import scala.util._
 
 import javax.inject._
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import de.zalando.play.controllers.PlayBodyParsing._
 import it.gov.daf.common.authentication.Authentication
 import org.pac4j.play.store.PlaySessionStore
 import play.api.Configuration
+import it.gov.daf.securitymanager.service.RegistrationService
+import scala.concurrent.Future
+import it.gov.daf.securitymanager.service.utilities.WebServiceUtil
+import it.gov.daf.sso.common.CacheWrapper
+import it.gov.daf.sso.ApiClientIPA
 
 /**
  * This controller is re-generated after each change in the specification.
@@ -29,7 +35,7 @@ import play.api.Configuration
 
 package security_manager.yaml {
     // ----- Start of unmanaged code area for package Security_managerYaml
-                                                                    
+    
     // ----- End of unmanaged code area for package Security_managerYaml
     class Security_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Security_managerYaml
@@ -51,32 +57,52 @@ package security_manager.yaml {
       )
     ) */
         // ----- End of unmanaged code area for constructor Security_managerYaml
+        val registrationconfirm = registrationconfirmAction { (token: String) =>  
+            // ----- Start of unmanaged code area for action  Security_managerYaml.registrationconfirm
+            RegistrationService.createUser(token) flatMap {
+              case Right(success) => Registrationconfirm200(success)
+              case Left(err) => Registrationconfirm500(err)
+            }
+            // ----- End of unmanaged code area for action  Security_managerYaml.registrationconfirm
+        }
+        val createIPAuser = createIPAuserAction { (user: IpaUser) =>  
+            // ----- Start of unmanaged code area for action  Security_managerYaml.createIPAuser
+            ApiClientIPA.createUser(user) flatMap {
+              case Right(success) => CreateIPAuser200(success)
+              case Left(err) => CreateIPAuser500(err)
+            }
+            // ----- End of unmanaged code area for action  Security_managerYaml.createIPAuser
+        }
+        val showipauser = showipauserAction { (uid: String) =>  
+            // ----- Start of unmanaged code area for action  Security_managerYaml.showipauser
+            ApiClientIPA.showUser(uid) flatMap {
+              case Right(success) => Showipauser200(success)
+              case Left(err) => Showipauser500(err)
+            }
+            // ----- End of unmanaged code area for action  Security_managerYaml.showipauser
+        }
         val token = tokenAction {  _ =>  
             // ----- Start of unmanaged code area for action  Security_managerYaml.token
+            val credentials = WebServiceUtil.readCredentialFromRequest(currentRequest)
+            //SsoServiceClient.registerInternal(credentials._1.get,credentials._2.get)
+            CacheWrapper.putCredentials(credentials._1.get,credentials._2.get)
+
             Token200(Authentication.getStringToken(currentRequest).getOrElse(""))
             // ----- End of unmanaged code area for action  Security_managerYaml.token
         }
-        val createIPAuser = createIPAuserAction { (user: UserIpa) =>  
-            // ----- Start of unmanaged code area for action  Security_managerYaml.createIPAuser
-            NotImplementedYet
-            // ----- End of unmanaged code area for action  Security_managerYaml.createIPAuser
+        val registrationrequest = registrationrequestAction { (user: IpaUser) =>  
+            // ----- Start of unmanaged code area for action  Security_managerYaml.registrationrequest
+            val reg = RegistrationService.requestRegistration(user) flatMap {
+              case Right(mailService) => mailService.sendMail()
+              case Left(msg) => Future {Left(msg)}
+            }
+
+            reg flatMap {
+              case Right(msg) => Registrationrequest200(Success(Some("Success"), Some(msg)))
+              case Left(msg) => Registrationrequest500(Error(Option(1), Option(msg), None))
+            }
+            // ----- End of unmanaged code area for action  Security_managerYaml.registrationrequest
         }
-    
-     // Dead code for absent methodSecurity_managerYaml.getckanuser
-     /*
-            // ----- Start of unmanaged code area for action  Security_managerYaml.getckanuser
-            NotImplementedYet
-            // ----- End of unmanaged code area for action  Security_managerYaml.getckanuser
-     */
-
-    
-     // Dead code for absent methodSecurity_managerYaml.getIPAuser
-     /*
-            // ----- Start of unmanaged code area for action  Security_managerYaml.getIPAuser
-            NotImplementedYet
-            // ----- End of unmanaged code area for action  Security_managerYaml.getIPAuser
-     */
-
     
     }
 }

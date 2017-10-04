@@ -1,12 +1,12 @@
-package it.gov.daf.catalogmanager.tempo
+package it.gov.daf.securitymanager.service
 
+import scala.concurrent.Future
 import javax.mail.internet.InternetAddress
 
+
 import courier.{Envelope, Mailer, Text}
-import it.gov.daf.catalogmanager.utilities.ConfigReader
 
-import scala.concurrent.{Await, Future}
-
+import it.gov.daf.securitymanager.service.utilities.ConfigReader
 
 class MailService(to:String,token:String) {
 
@@ -33,11 +33,10 @@ class MailService(to:String,token:String) {
 
 object MailService{
 
-  // TODO da mettere in configurazione
-  private val SMTP_SERVER = "smtp.gmail.com"
-  private val SMTP_PORT = 587
-  private val SMTP_LOGIN = "maildaf2017@gmail.com"
-  private val SMTP_PWD = "birradaf"
+  private val SMTP_SERVER = ConfigReader.smtpServer
+  private val SMTP_PORT = ConfigReader.smtpPort
+  private val SMTP_LOGIN = ConfigReader.smtpLogin
+  private val SMTP_PWD = ConfigReader.smtpPwd
 
   private val mailer = Mailer(SMTP_SERVER, SMTP_PORT)
     .auth(true)
@@ -46,7 +45,7 @@ object MailService{
 
   private val SENDER = "a.cherici@gmail.com"
   private val SUBJECT = "Registration to DAF"
-  private val CONTENT = "Clik on this link to complete registration:\n"
+  private val CONTENT = "Click on this link to complete registration:\n"
 
   private val LINK = ConfigReader.registrationUrl
 

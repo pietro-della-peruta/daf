@@ -80,7 +80,7 @@
       case e: JsError => None
     }
 
-    def listCatalogs() :Seq[MetaCatalog] = {
+    def listCatalogs(page :Option[Int], limit :Option[Int]) :Seq[MetaCatalog] = {
       val file: File = Environment.simple().getFile("data/data-mgt/data_test.json")
       val lines = scala.io.Source.fromFile(file).getLines()
       val results= lines.map(line => {
@@ -165,5 +165,6 @@
       Success(Some(msg),Some(msg))
     }
 
-     def standardUris(): List[String] = List("raf", "org", "cert")
+    // Not used
+     def standardUris(): List[String] = List("ale", "raf")
   }

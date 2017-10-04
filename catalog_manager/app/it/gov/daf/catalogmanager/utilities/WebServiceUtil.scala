@@ -4,9 +4,10 @@ import java.io.File
 import java.net.URLEncoder
 
 import catalog_manager.yaml.Credentials
+import it.gov.daf.common.authentication.Authentication
 import org.apache.commons.net.util.Base64
 import play.api.libs.json
-import play.api.libs.json.{JsArray, JsError, JsString, JsValue,JsObject}
+import play.api.libs.json.{JsArray, JsError, JsObject, JsString, JsValue}
 import play.api.mvc.Request
 
 import scala.util.parsing.json.JSONObject
@@ -35,6 +36,8 @@ object WebServiceUtil {
 
   val environment = Environment(new File("."), this.getClass.getClassLoader, Mode.Prod)
 
+  Authentication(Configuration.load(Environment.simple()),null)
+
   val parser = new WSConfigParser(configuration, environment)
   val config = new AhcWSClientConfig(wsClientConfig = parser.parse())
   val builder = new AhcConfigBuilder(config)
@@ -60,15 +63,32 @@ object WebServiceUtil {
   }
 
 
-  def readCredentialFromRequest( request:Request[Any]) :Credentials ={
+  def readCredentialFromRequest( request:Request[Any] ) :Credentials ={
 
+    println(request.headers)
     val auth = request.headers.get("authorization")
+    val authType = auth.get.split(" ")(0)
+
+
+    if( authType.equalsIgnoreCase("basic") ){
+      println("basic")
+      val userAndPass = new String(Base64.decodeBase64(auth.get.split(" ").drop(1).head.getBytes)).split(":")
+      println(userAndPass(0))
+      Credentials( Option(userAndPass(0)), Option(userAndPass(1)) )
+
+    }else if( authType.equalsIgnoreCase("bearer") ) {
+      println("bearer")
+      val user:Option[String] = Option( Authentication.getClaims(request).get.get("sub").get.toString )
+      println("JWT user:"+user)
+      Credentials(user , None)
+
+    }else
+      throw new Exception("Authorization header not found")
+
 
     //val userAndPass = if (auth.get.contains(" ")) new String(Base64.decodeBase64(auth.get.split(" ").drop(1).head.getBytes)).split(":")
     //                  else new String(Base64.decodeBase64(auth.get.getBytes)).split(":")
-    val userAndPass = new String(Base64.decodeBase64(auth.get.split(" ").drop(1).head.getBytes)).split(":")
 
-    Credentials( Option(userAndPass(0)), Option(userAndPass(1)) )
 
   }
 
